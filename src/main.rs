@@ -3,7 +3,7 @@
 
 use panic_halt as _; // you can put a breakpoint on `rust_begin_unwind` to catch panics
                      // use panic_semihosting as _; // logs messages to the host stderr; requires a debugger
-use cortex_m;
+                     // use cortex_m;
 use cortex_m_rt::entry;
 use stm32l4::stm32l4x2::{self, interrupt};
 
@@ -12,17 +12,17 @@ static mut GPIOB_PERIPHERAL: Option<stm32l4x2::GPIOB> = None;
 
 #[interrupt]
 fn TIM2() {
-    unsafe {
-        if let Some(tim2) = TIM2_PERIPHERAL.as_mut() {
-            if tim2.sr.read().uif().bit_is_set() {
-                let gpiob = GPIOB_PERIPHERAL.as_ref().unwrap();
+    // SAFETY: impossible race condition
+    if let Some(tim2) = unsafe { TIM2_PERIPHERAL.as_mut() } {
+        if tim2.sr.read().uif().bit_is_set() {
+            if let Some(gpiob) = unsafe { GPIOB_PERIPHERAL.as_ref() } {
                 if gpiob.odr.read().odr6().bit_is_set() {
                     gpiob.bsrr.write(|w| w.br6().reset());
                 } else {
                     gpiob.bsrr.write(|w| w.bs6().set());
                 }
-                tim2.sr.write(|w| w.uif().clear_bit())
             }
+            tim2.sr.write(|w| w.uif().clear_bit())
         }
     }
 }
@@ -58,5 +58,6 @@ fn main() -> ! {
         GPIOB_PERIPHERAL = Some(dp.GPIOB);
     }
 
+    #[allow(clippy::empty_loop)]
     loop {}
 }
