@@ -1,5 +1,5 @@
 [package]
-authors = ["jw"]
+authors = ["binotation"]
 edition = "2021"
 readme = "README.md"
 name = "blinky-pac"
