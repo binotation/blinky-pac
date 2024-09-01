@@ -3,12 +3,12 @@
 
 use panic_halt as _; // you can put a breakpoint on `rust_begin_unwind` to catch panics
                      // use panic_semihosting as _; // logs messages to the host stderr; requires a debugger
-                     // use cortex_m;
-use cortex_m_rt::entry;
-use stm32l4::stm32l4x2::{self, interrupt};
 
-static mut TIM2_PERIPHERAL: Option<stm32l4x2::TIM2> = None;
-static mut GPIOB_PERIPHERAL: Option<stm32l4x2::GPIOB> = None;
+use cortex_m_rt::entry;
+use stm32l4::stm32l4x2::{interrupt, Interrupt, Peripherals, GPIOB, TIM2};
+
+static mut TIM2_PERIPHERAL: Option<TIM2> = None;
+static mut GPIOB_PERIPHERAL: Option<GPIOB> = None;
 
 #[interrupt]
 fn TIM2() {
@@ -31,7 +31,7 @@ fn TIM2() {
 fn main() -> ! {
     // Device defaults to 4MHz clock
 
-    let dp = stm32l4x2::Peripherals::take().unwrap();
+    let dp = Peripherals::take().unwrap();
 
     // Enable peripheral clocks - GPIOB, TIM2
     dp.RCC.ahb2enr.write(|w| w.gpioben().set_bit());
@@ -49,7 +49,7 @@ fn main() -> ! {
     dp.TIM2.dier.write(|w| w.uie().set_bit());
 
     // Unmask TIM2 global interrupt
-    unsafe { cortex_m::peripheral::NVIC::unmask(stm32l4x2::Interrupt::TIM2) }
+    unsafe { cortex_m::peripheral::NVIC::unmask(Interrupt::TIM2) }
 
     // Enable TIM2 counter
     dp.TIM2.cr1.write(|w| w.cen().set_bit());
